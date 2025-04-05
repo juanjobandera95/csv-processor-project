@@ -1,0 +1,6 @@
+id,Nombre,email,edad,dirección
+1,Ana García,ana.garcia@email.com,28,Calle Mayor 123, Madrid
+2,Carlos Pérez,c.perez@email.com,35,Avenida del Sol 45, Sevilla
+3,Lucía Martínez,lucia.m@email.com,22,Calle Luna 12, Valencia
+4,David Rodríguez,david.r@email.com,41,Calle Falsa 123, Barcelona
+5,María López,maria.lopez@email.com,30,Calle del Río 89, Bilbao
