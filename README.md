@@ -1,4 +1,3 @@
-# csv-processor-project
 
 # Proyecto DoctorSender: Microservicio de Procesamiento de Datos
 
