@@ -2,9 +2,6 @@
 
 # Proyecto DoctorSender: Microservicio de Procesamiento de Datos
 
-**Dirección:** DoctorSender, Carrer Filà Abencerrajes, 4, 03804 Alcoi, Alicante  
-**Contacto:** +34 965 524 819 - info@doctorsender.com
-
 ## Descripción del Proyecto
 
 Este proyecto tiene como objetivo desarrollar un microservicio de alta eficiencia y escalabilidad que procese grandes volúmenes de datos (más de medio millón de registros). Los datos representan suscriptores con su nombre, email, edad y dirección.
@@ -55,10 +52,109 @@ php bin/console doctrine:migrations:migrate
 ```
 ## Paso 3: Implementar la Carga de CSV
 Crear un Servicio para Procesar el CSV
+```
 
+<?php 
+
+namespace App\Service;
+
+use Doctrine\ORM\EntityManagerInterface;
+use League\Csv\Reader;
+use App\Entity\Subscriber;
+
+class CsvProcessor
+{
+    private $entityManager;
+
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
+
+    public function processCsv(string $filePath)
+    {
+        $csv = Reader::createFromPath($filePath, 'r');
+        $csv->setHeaderOffset(0);
+
+        foreach ($csv->getRecords() as $record) {
+            $subscriber = new Subscriber();
+            $subscriber->setName($record['name']);
+            $subscriber->setEmail($record['email']);
+            $subscriber->setAge((int)$record['age']);
+            $subscriber->setAddress($record['address']);
+
+            $this->entityManager->persist($subscriber);
+        }
+
+        $this->entityManager->flush();
+    }
+}
+
+```
 Crea un servicio en src/Service/CsvProcessor.php y un comando en src/Command/ProcessCsvCommand.php para procesar el CSV.
 ## Paso 4: Implementar el Endpoint RESTful
 Crear un Controlador
+```
+php bin/console make:controller SubscriberController
+```
+
+Codigo
+```
+<?php
+
+namespace App\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use App\Repository\SubscriberRepository;
+
+class SubscriberController extends AbstractController
+
+{
+
+    private $cache;
+
+
+    public function __construct(CacheInterface $cache)
+
+    {
+
+        $this->cache = $cache;
+
+    }
+
+
+    /**
+
+     * @Route("/api/subscribers", name="api_subscribers", methods={"GET"})
+
+     */
+
+    public function index(Request $request, SubscriberRepository $subscriberRepository): JsonResponse
+
+    {
+
+        $subscribers = $this->cache->get('subscribers_cache_key', function (ItemInterface $item) use ($request, $subscriberRepository) {
+
+            $item->expiresAfter(3600);
+
+            $criteria = array_filter($request->query->all());
+
+            return $subscriberRepository->findBy($criteria);
+
+        });
+
+
+        return $this->json($subscribers);
+
+    }
+
+}
+```
 
 Usa el MakerBundle para crear un controlador y documenta el endpoint con NelmioApiDocBundle.
 ## Paso 5: Configurar Docker
